@@ -1,5 +1,6 @@
 from llama_cpp import Llama
 
+
 # --------------------------------------------------
 # Model Configuration
 # --------------------------------------------------
@@ -27,7 +28,9 @@ SYSTEM_PROMPT = """
 You are Gemma, a helpful, friendly, and intelligent AI assistant.
 
 Answer questions clearly and accurately.
+
 When explaining programming concepts, provide examples when useful.
+
 Keep responses understandable and well structured.
 """
 
@@ -60,6 +63,7 @@ Available Commands:
 while True:
 
     try:
+
         user_input = input("You: ").strip()
 
         # Ignore empty messages
@@ -99,20 +103,34 @@ while True:
 
         print("\nGemma: ", end="", flush=True)
 
-        # Generate response
-        response = llm.create_chat_completion(
+        # ------------------------------------------
+        # Generate Streaming Response
+        # ------------------------------------------
+
+        stream = llm.create_chat_completion(
             messages=conversation,
             temperature=0.7,
-            max_tokens=512
+            max_tokens=512,
+            stream=True
         )
 
-        answer = response["choices"][0]["message"]["content"]
+        answer = ""
 
-        # Print response
-        print(answer)
-        print()
+        # Receive response piece by piece
+        for chunk in stream:
 
-        # Save assistant response to conversation memory
+            content = chunk["choices"][0]["delta"].get("content", "")
+
+            if content:
+                print(content, end="", flush=True)
+                answer += content
+
+        print("\n")
+
+        # ------------------------------------------
+        # Save Assistant Response to Memory
+        # ------------------------------------------
+
         conversation.append(
             {
                 "role": "assistant",
@@ -121,8 +139,10 @@ while True:
         )
 
     except KeyboardInterrupt:
+
         print("\n\nGoodbye! 👋\n")
         break
 
     except Exception as error:
+
         print(f"\nError: {error}\n")
